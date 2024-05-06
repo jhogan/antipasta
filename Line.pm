@@ -3,42 +3,51 @@ use Mod;
 use Generic;
 use Lines;
 use VarInstances;
+
+# Constructor for creating a new Line object
 sub new {
     my $class = shift;
     my $self = {};
     bless $self, $class;
-    $self->_init(@_);
+    $self->_init(@_);  # Initialize the object properties
     return $self;
 }
-sub _init{
-    my $self=shift;
+
+# Internal initialization method, setting up line properties
+sub _init {
+    my $self = shift;
     $self->{_props}->{_line_no_id} = shift;
     $self->{_props}->{_bas_line_id} = shift;
     $self->{_props}->{_mod_seq} = shift;
     $self->{_props}->{_mod} = shift;
-    $self->_main_line_parser;
+    $self->_main_line_parser;  # Parse the main line to split into components
     $self->{_props}->{_full_line} = $self->{_props}->{_bas_line_id} . " " . $self->{_props}->{_line_no_id};
     #$self->{_props}->{_comment} = ""; 
     #$self->{_props}->{_code} = "";
 	$self->{_props}->{_instances} = VarInstances->new;
 }
 
-
-sub bas_line_id{
-    my $self=shift;
+# Getter for the basic line ID
+sub bas_line_id {
+    my $self = shift;
     return $self->{_props}->{_bas_line_id};
 }
-sub full_line{
-    my $self=shift;
+
+# Getter for the full line text
+sub full_line {
+    my $self = shift;
     return $self->{_props}->{_full_line};
 }
-sub line_no_id{
-    my $self=shift;
-    return $self->{_props}->{_line_no_id} ;
+
+# Getter for the line number ID
+sub line_no_id {
+    my $self = shift;
+    return $self->{_props}->{_line_no_id};
 }
 
-sub _main_line_parser{
-    my $self=shift;
+# Main parser for the line, handling comments and quotes
+sub _main_line_parser {
+    my $self = shift;
     my $line_no_id = $self->line_no_id;
     my $skip_comment_keyword_by;
     my $comment_found;
@@ -69,49 +78,57 @@ sub _main_line_parser{
 	$self->{_props}->{_code_no_quotes} =~ s/^\s(.*?)\s*$/$1/;
 }
 
-sub Code{
-    $self = shift;
+# Getter for the code (excluding comments)
+sub Code {
+    my $self = shift;
     return $self->{_props}->{_code};
 }
-sub comment{
-    $self = shift;
+
+# Getter for the comment part of the line
+sub comment {
+    my $self = shift;
     return $self->{_props}->{_comment};
 }
 
-sub code_no_quotes{
-    $self = shift;
+# Getter for the code with no quotes
+sub code_no_quotes {
+    my $self = shift;
     return $self->{_props}->{_code_no_quotes};
 }
 
-sub mod_seq{
+# Getter for the module sequence number
+sub mod_seq {
     my $self = shift;
     return $self->{_props}->{_mod_seq};
 }
 
-sub is_comment{
+# Check if the line is a comment
+sub is_comment {
     my $self = shift;
     return ($self->comment && !$self->Code);
 }
 
-sub is_return{
+# Check if the line indicates a RETURN statement
+sub is_return {
     my $self = shift; 
     return ($self->code_no_quotes =~ /^\s*RETURN.*/);
 }
 
-
-sub is_gosub{
+# Check if the line indicates a GOSUB statement and returns the target
+sub is_gosub {
     my $self = shift;
     $self->code_no_quotes =~ /.*GOSUB\W*(([0-9]+)|([A-Z][A-Z0-9]*))/; 
-	return $1;
+    return $1;
 }
 
-sub is_if{
+# Identifies if a line contains an IF statement
+sub is_if {
     my $self = shift;
     return $self->code_no_quotes =~ /^\s*IF/;
 }
-		
 
-sub gosub_this{
+# Method to extract the GOSUB subroutine this line points to
+sub gosub_this {
     my $self = shift;
 	$DEBUG=0;
 	if ($self->{_props}->{_gosub_this}){return $self->{_props}->{_gosub_this};}
@@ -166,18 +183,20 @@ sub gosub_this{
 		return $sub;
 }
 
-
-sub mod{
-    $self = shift;
+# Getter for the associated module
+sub mod {
+    my $self = shift;
     return $self->{_props}->{_mod};
 }
 
-sub is_goto{
+# Check if the line is a GOTO statement and returns the target
+sub is_goto {
     my $self = shift;
-	$self->code_no_quotes =~ /^\s*GOTO\s*(([0-9]+)|([A-Z][A-Z0-9]*))/;
+    $self->code_no_quotes =~ /^\s*GOTO\s*(([0-9]+)|([A-Z][A-Z0-9]*))/;
     return $1;
 }
 
+# Method to add a variable instance to the line
 sub add_var_instance {
     my $self=shift;
     my $instance=shift;
@@ -189,7 +208,9 @@ sub var_instances{
     my $self=shift;
 	return $self->{_props}->{_var_instances};
 }
-sub lines_that_goto_me{
+
+# Getter for the variable instances associated with this line
+sub var_instances {
     my $self = shift;
     my $mod_lines = $self->mod->lines->col;
 	$lines_that_goto_me = Lines->new;
@@ -203,7 +224,7 @@ sub lines_that_goto_me{
 }
 
 
-
+# Method to resolve the GOTO target for this line
 sub goto_this {
     my $self=shift;
 	if (!$self->{_props}->{_goto_this}){
@@ -237,17 +258,21 @@ sub sub_im_in{
 }
 
 
-sub set_sub_im_in{
-	$self = shift;
-	$sub = shift;
-	$self->{_props}->{_sub_im_in} = $sub;
+# Method to explicitly set the subroutine this line is part of
+sub set_sub_im_in {
+    my $self = shift;
+    my $sub = shift;
+    $self->{_props}->{_sub_im_in} = $sub;
 }
 
-sub get_sub_im_in{
-	$self = shift;
-	return $self->{_props}->{_sub_im_in}; 
+# Getter for the subroutine this line is part of
+sub get_sub_im_in {
+    my $self = shift;
+    return $self->{_props}->{_sub_im_in};
 }
-sub dimention_code{
+
+# Method to extract and return dimension-related code
+sub dimention_code {
     my $self = shift;
     if ($self->code_no_quotes =~ /DIM(.*)/){
 		return $1;
@@ -259,4 +284,4 @@ sub non_dimention_code{
 	return $1;
 }
 
-1;
+1;  # Ensures the module returns true to signify it loaded correctly
